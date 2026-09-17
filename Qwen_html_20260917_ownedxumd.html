@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Minimal — Architecture & Product Design</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           CSS VARIABLES & RESET
+           ========================================= */
+        :root {
+            --bg: #F4F3EF;
+            --text: #1A1A1A;
+            --text-muted: #6B6B6B;
+            --accent: #8C8279;
+            --font-serif: 'Instrument Serif', Georgia, serif;
+            --font-sans: 'Inter', system-ui, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            font-weight: 300;
+            line-height: 1.6;
+            overflow-x: hidden;
+            cursor: none; /* Hide default cursor on desktop */
+        }
+
+        /* Subtle film grain overlay for premium feel */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* =========================================
+           CUSTOM CURSOR
+           ========================================= */
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text);
+            border-radius: 50%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+        }
+
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(26, 26, 26, 0.3);
+            border-radius: 50%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9997;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease, border-color 0.4s ease;
+        }
+
+        .cursor-img {
+            width: 300px;
+            height: 400px;
+            background-size: cover;
+            background-position: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9996;
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            border-radius: 4px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        /* Hover states for cursor */
+        body:hover .cursor-dot { mix-blend-mode: difference; }
+        a:hover ~ .cursor-outline, button:hover ~ .cursor-outline {
+            width: 60px;
+            height: 60px;
+            border-color: var(--accent);
+        }
+
+        /* =========================================
+           LAYOUT & TYPOGRAPHY
+           ========================================= */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-serif);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        /* =========================================
+           NAVIGATION
+           ========================================= */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            mix-blend-mode: difference;
+            color: #fff;
+        }
+
+        .logo {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            font-style: italic;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .nav-links a {
+            position: relative;
+            padding-bottom: 4px;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #fff;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* =========================================
+           HERO SECTION
+           ========================================= */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 8vw, 8rem);
+            line-height: 0.95;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 span {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero h1 span em {
+            display: inline-block;
+            transform: translateY(100%);
+            animation: slideUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .hero h1 span:nth-child(2) em {
+            animation-delay: 0.1s;
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        @keyframes slideUp {
+            to { transform: translateY(0); }
+        }
+
+        .hero-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 20px;
+        }
+
+        /* =========================================
+           WORK / PROJECTS SECTION
+           ========================================= */
+        .work {
+            padding: 150px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 80px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 20px;
+        }
+
+        .section-header h2 {
+            font-size: 1.2rem;
+            font-family: var(--font-sans);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .project-list {
+            list-style: none;
+        }
+
+        .project-item {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 40px 0;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            align-items: center;
+            transition: padding 0.4s ease, opacity 0.4s ease;
+            position: relative;
+        }
+
+        .project-item:hover {
+            padding-left: 20px;
+        }
+
+        .project-item:hover .project-title {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .project-year {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .project-title {
+            font-family: var(--font-serif);
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            transition: color 0.4s ease, font-style 0.4s ease;
+        }
+
+        .project-category {
+            text-align: right;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        /* =========================================
+           ABOUT / PHILOSOPHY SECTION
+           ========================================= */
+        .about {
+            padding: 150px 0;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 100px;
+            align-items: start;
+        }
+
+        .about-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            position: sticky;
+            top: 120px;
+        }
+
+        .about-text p {
+            font-family: var(--font-serif);
+            font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+            line-height: 1.4;
+            margin-bottom: 30px;
+        }
+
+        .about-text p:last-child {
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* =========================================
+           FOOTER / CONTACT
+           ========================================= */
+        footer {
+            padding: 100px 0 40px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .footer-cta {
+            text-align: center;
+            margin-bottom: 150px;
+        }
+
+        .footer-cta h2 {
+            font-size: clamp(3rem, 7vw, 6rem);
+            line-height: 1;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            border: 1px solid var(--text);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--text);
+            color: var(--bg);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* =========================================
+           SCROLL ANIMATIONS
+           ========================================= */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* =========================================
+           RESPONSIVE / MOBILE
+           ========================================= */
+        @media (max-width: 768px) {
+            body { cursor: auto; }
+            .cursor-dot, .cursor-outline, .cursor-img { display: none; }
+            
+            .container { padding: 0 20px; }
+            nav { padding: 20px; }
+            .nav-links { gap: 20px; font-size: 0.75rem; }
+            
+            .project-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 30px 0;
+            }
+            .project-item:hover { padding-left: 0; }
+            .project-category { text-align: left; }
+            
+            .about {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            .about-label { position: static; }
+            
+            .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Custom Cursor Elements -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+    <div class="cursor-img"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="#" class="logo">Studio Minimal</a>
+        <ul class="nav-links">
+            <li><a href="#work">Work</a></li>
+            <li><a href="#about">Studio</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="hero container">
+            <h1>
+                <span><em>Designing spaces</em></span>
+                <span><em>& objects.</em></span>
+            </h1>
+            <div class="hero-meta">
+                <span>Architecture & Product Design Portfolio</span>
+                <span>Based in Kyoto / Working Globally</span>
+            </div>
+        </section>
+
+        <!-- Selected Work Section -->
+        <section class="work container" id="work">
+            <div class="section-header reveal">
+                <h2>Selected Work (2021 — 2026)</h2>
+                <span>06 Projects</span>
+            </div>
+
+            <ul class="project-list">
+                <!-- Project 1 -->
+                <li class="project-item reveal" 
+                    data-img="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80">
+                    <span class="project-year">2026</span>
+                    <h3 class="project-title">The Glass Pavilion</h3>
+                    <span class="project-category">Architecture</span>
+                </li>
+                <!-- Project 2 -->
+                <li class="project-item reveal" 
+                    data-img="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80">
+                    <span class="project-year">2025</span>
+                    <h3 class="project-title">Lumina Lounge Chair</h3>
+                    <span class="project-category">Product Design</span>
+                </li>
+                <!-- Project 3 -->
+                <li class="project-item reveal" 
+                    data-img="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80">
+                    <span class="project-year">2024</span>
+                    <h3 class="project-title">Urban Canopy Residence</h3>
+                    <span class="project-category">Architecture</span>
+                </li>
+                <!-- Project 4 -->
+                <li class="project-item reveal" 
+                    data-img="https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80">
+                    <span class="project-year">2024</span>
+                    <h3 class="project-title">Aero Task Lamp</h3>
+                    <span class="project-category">Product Design</span>
+                </li>
+                <!-- Project 5 -->
+                <li class="project-item reveal" 
+                    data-img="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80">
+                    <span class="project-year">2023</span>
+                    <h3 class="project-title">Horizon Cultural Center</h3>
+                    <span class="project-category">Architecture</span>
+                </li>
+                <!-- Project 6 -->
+                <li class="project-item reveal" 
+                    data-img="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80">
+                    <span class="project-year">2022</span>
+                    <h3 class="project-title">Monolith Coffee Table</h3>
+                    <span class="project-category">Product Design</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- About Section -->
+        <section class="about container" id="about">
+            <div class="about-label reveal">
+                <p>02 / Philosophy</p>
+            </div>
+            <div class="about-text reveal">
+                <p>We believe that the boundary between architecture and product design is an illusion. Both require a deep understanding of material, light, and the human body.</p>
+                <p>Our studio focuses on creating timeless, sustainable environments and objects that age gracefully, reducing the need for replacement and honoring the resources used to create them.</p>
+                <p>Founded in 2018, the studio operates at the intersection of spatial design and industrial manufacturing, collaborating with artisans and engineers globally.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer / Contact -->
+    <footer class="container" id="contact">
+        <div class="footer-cta reveal">
+            <h2>Let's build<br>something <em>lasting.</em></h2>
+            <a href="mailto:hello@studiominimal.com" class="btn">Start a Project</a>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 Studio Minimal. All rights reserved.</span>
+            <div>
+                <a href="#">Instagram</a> &nbsp; / &nbsp; 
+                <a href="#">Behance</a> &nbsp; / &nbsp; 
+                <a href="#">LinkedIn</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Interactions -->
+    <script>
+        // =========================================
+        // CUSTOM CURSOR & IMAGE REVEAL
+        // =========================================
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+        const cursorImg = document.querySelector('.cursor-img');
+        const projectItems = document.querySelectorAll('.project-item');
+
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+        let imgX = 0, imgY = 0;
+
+        // Track mouse position
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            // Snap dot immediately
+            cursorDot.style.top = `${mouseY}px`;
+            cursorDot.style.left = `${mouseX}px`;
+        });
+
+        // Smooth follow for outline and image using requestAnimationFrame
+        function animate() {
+            // Outline follows with slight delay
+            outlineX += (mouseX - outlineX) * 0.15;
+            outlineY += (mouseY - outlineY) * 0.15;
+            cursorOutline.style.top = `${outlineY}px`;
+            cursorOutline.style.left = `${outlineX}px`;
+
+            // Image follows with slightly more delay for a premium feel
+            imgX += (mouseX - imgX) * 0.1;
+            imgY += (mouseY - imgY) * 0.1;
+            cursorImg.style.top = `${imgY}px`;
+            cursorImg.style.left = `${imgX}px`;
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Project Hover Image Reveal
+        projectItems.forEach(item => {
+            item.addEventListener('mouseenter', (e) => {
+                const imgSrc = item.getAttribute('data-img');
+                cursorImg.style.backgroundImage = `url(${imgSrc})`;
+                cursorImg.style.opacity = '1';
+                cursorImg.style.transform = 'translate(-50%, -50%) scale(1)';
+                
+                // Expand outline
+                cursorOutline.style.width = '0px';
+                cursorOutline.style.height = '0px';
+                cursorOutline.style.opacity = '0';
+            });
+
+            item.addEventListener('mouseleave', () => {
+                cursorImg.style.opacity = '0';
+                cursorImg.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                
+                // Restore outline
+                cursorOutline.style.width = '40px';
+                cursorOutline.style.height = '40px';
+                cursorOutline.style.opacity = '1';
+            });
+        });
+
+        // =========================================
+        // SCROLL REVEAL ANIMATIONS
+        // =========================================
+        const reveals = document.querySelectorAll('.reveal');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        reveals.forEach(el => observer.observe(el));
+
+        // =========================================
+        // MAGNETIC BUTTON EFFECT
+        // =========================================
+        const magneticBtns = document.querySelectorAll('.btn, .nav-links a');
+
+        magneticBtns.forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                
+                btn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'translate(0, 0)';
+                btn.style.transition = 'transform 0.4s ease';
+            });
+            
+            btn.addEventListener('mouseenter', () => {
+                btn.style.transition = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
